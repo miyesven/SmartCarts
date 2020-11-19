@@ -1,2 +1,0 @@
-target-tracking-pkg
--DCATKIN_DEVEL_PREFIX=/home/miyesven/Documents/workspace/SmartCarts/devel -DCMAKE_INSTALL_PREFIX=/home/miyesven/Documents/workspace/SmartCarts/install -G Unix Makefiles
