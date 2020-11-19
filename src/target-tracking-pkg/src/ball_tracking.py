@@ -14,9 +14,13 @@ from imutils.video import VideoStream
 import numpy as np
 import math
 import argparse
-import cv2
 import imutils
 import time
+
+#import sys
+#sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+import cv2
+#sys.path.append('/opt/ros/kinetic/lib/python2.7/dist-packages')
 
 greenLower = (33, 94, 96)
 greenUpper = (67, 255, 255)
@@ -24,6 +28,9 @@ redLower = (140, 154, 65)
 redUpper = (207, 255, 195)
 center_x = 250 # center of screen, x coord
 center_y = 250 # center of screen, y coord
+
+args = {}
+pts = deque()
 
 def init_webcam():
 	'''Returns videostream'''
@@ -51,22 +58,33 @@ def init_webcam():
 
 	return vs
 
+
 def target_distance_calc(radius):
 	if radius > 1:
-		return 1/radius * 100
+		return 1/radius * 500
 	else:
-		return 100;
+		return 500
+
 
 def target_rel_angle_calc(distance, center):
-	return [degrees(atan(np.abs(center_x - center[0])/distance)), degrees(atan(np.abs(center_y - center[1])/distance))]
+	angle = []
+	try:
+		angle = [math.degrees(math.atan(np.abs(center_x - center[0])/distance)), math.degrees(math.atan(np.abs(center_y - center[1])/distance))]
+	except:
+		pass
+	return angle
+
 
 def ball_tracker():
-	target_dist_pub = rospy.Publisher('target_distance', Int32)
-	target_angle_pub = rospy.Publisher('target_relative_angle', Int32MultiArray)
-	rospy.init_node('ball_tracker')
+	target_dist_pub = rospy.Publisher('target_distance', Int32, queue_size = 10)
+	target_angle_pub = rospy.Publisher('target_relative_angle', Int32MultiArray, queue_size = 10)
+	rospy.init_node('ball_tracker', anonymous=True)
 	r = rospy.Rate(10)
+
 	vs = init_webcam()
+
 	while not rospy.is_shutdown():
+
 		# grab the current frame
 		frame = vs.read()
 		# handle the frame from VideoCapture or VideoStream
@@ -83,7 +101,7 @@ def ball_tracker():
 		# construct a mask for the color "green", then perform
 		# a series of dilations and erosions to remove any small
 		# blobs left in the mask
-		mask = cv2.inRange(hsv, redLower, redUpper)
+		mask = cv2.inRange(hsv, greenLower, greenUpper)
 		mask = cv2.erode(mask, None, iterations=2)
 		mask = cv2.dilate(mask, None, iterations=2)
 
@@ -118,30 +136,31 @@ def ball_tracker():
 		target_relative_angle = target_rel_angle_calc(target_distance, center)
  
 		target_dist_pub.publish(target_distance)
-		target_angle_pub.publish = target_relative_angle
-		# loop over the set of tracked points
-		for i in range(1, len(pts)):
-			# if either of the tracked points are None, ignore
-			# them
-			if pts[i - 1] is None or pts[i] is None:
-				continue
-			# otherwise, compute the thickness of the line and
-			# draw the connecting lines
-			thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
-			cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
+		target_angle_pub.publish(data=target_relative_angle)
 
-		# record to parse min and max contour of ball
-		if (startflag == 1):
-		    minMaxRadius.append(radius);
+#		# loop over the set of tracked points
+#		for i in range(1, len(pts)):
+#			# if either of the tracked points are None, ignore
+#			# them
+#			if pts[i - 1] is None or pts[i] is None:
+#				continue
+#			# otherwise, compute the thickness of the line and
+#			# draw the connecting lines
+#			thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
+#			cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
-		# show the frame to our screen
-		cv2.imshow("Frame", frame)
-		key = cv2.waitKey(1) & 0xFF
-		# if the 'q' key is pressed, stop the loop
-		if key == ord("q"):
-			break
+#		# record to parse min and max contour of ball
+#		if (startflag == 1):
+#		    minMaxRadius.append(radius);
 
-		rate.sleep()
+#		# show the frame to our screen
+#		cv2.imshow("Frame", frame)
+#		key = cv2.waitKey(1) & 0xFF
+#		# if the 'q' key is pressed, stop the loop
+#		if key == ord("q"):
+#			break
+
+		r.sleep()
 
 	# if we are not using a video file, stop the camera video stream
 	if not args.get("video", False): 
