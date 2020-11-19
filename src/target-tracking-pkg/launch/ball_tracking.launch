@@ -1,0 +1,8 @@
+<launch>
+	<!-- target-tracking launch file -->
+	<node pkg="target-tracking-pkg"
+		  type="ball_tracking.py"
+		  name="ball_tracking"
+		  output="screen">
+	</node>
+</launch>

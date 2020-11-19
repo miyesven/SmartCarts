@@ -1,0 +1,8 @@
+prefix=/home/miyesven/Documents/workspace/SmartCarts/install
+
+Name: target-tracking
+Description: Description of target-tracking
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
