@@ -4,8 +4,9 @@ import numpy as np
 import cv2
 import os
 import sys
+import matplotlib.pyplot as plt
 
-file = 'outdoors.bag'
+file = '2d-stereopluscam.bag'
 dir =os.path.dirname(os.path.realpath(__file__))
 bag_filename = os.path.join(dir, '')
 np.set_printoptions(threshold=sys.maxsize)
@@ -25,7 +26,7 @@ def main():
         colorizer = rs.colorizer()
         i = 0
         ### from ros docs
-        while True:
+        while i < 5: # skip first 5 frames, capture the 6th frame
             # get frameset of depth
             frames = pipeline.wait_for_frames()
             # get depth frame
@@ -37,18 +38,27 @@ def main():
 
             # get color frame and convert it to a numpy array
             color_frame = frames.get_color_frame()
+            color_image = np.asanyarray(color_frame.get_data())
 
-            # Render image in opencv window
-            # if i==0:
-            #     print(depth_color_image)
-            #     i+=1
-            print(depth_frame.get_distance(150,150))
-            cv2.imshow("Depth Stream", depth_color_image)
-            key = cv2.waitKey(1)
-            # If pressed, escape exit program
-            if key == 27:
-                cv2.destroyAllWindows()
-                break
+            # print(depth_frame.get_distance(150,150))
+
+            # # Render image in opencv window
+            # cv2.imshow("Depth Stream", depth_color_image)
+            # cv2.imshow("Color Stream", color_image)
+            # key = cv2.waitKey(1)
+            # # If pressed, escape exit program
+            # if key == 27:
+            #     cv2.destroyAllWindows()
+            #     break
+            i += 1
+
+        ## Plot the 6th frame of the video to check for ALIGNMENT
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(5, 3))
+        axes[0].title.set_text('Depth Frame')
+        axes[0].imshow(depth_color_image)
+        axes[1].title.set_text('Color Frame')
+        axes[1].imshow(color_image)
+        plt.show()
     finally:
         pass
 
