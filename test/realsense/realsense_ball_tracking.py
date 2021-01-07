@@ -7,7 +7,7 @@ import sys
 import matplotlib.pyplot as plt
 import time
 
-file = '2d-stereopluscam.bag'
+file = '5.bag'
 dir = os.path.dirname(os.path.realpath(__file__))
 bag_filename = os.path.join(dir, '')
 np.set_printoptions(threshold=sys.maxsize)

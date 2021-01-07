@@ -1,0 +1,10 @@
+. ~/catkin_ws/devel/setup.bash
+
+roscore
+
+rosbag play -l filename.bag 
+//-l means on loop, no -l means play once then end. this activates a ROS node with a random node name
+
+roslaunch target_tracking_pkg ball_tracking.launch input_type:=1
+// input_type:=0 means subscribing to camera. :=1 means subscribing to stream from a .bag file
+
