@@ -5,7 +5,7 @@
 
 ##### ROS #####
 import rospy
-from std_msgs.msg import Int32, Int32MultiArray, UInt8MultiArray
+from std_msgs.msg import Int32, Int32MultiArray, UInt16MultiArray
 from sensor_msgs.msg import Image
 ##### BALL RECOGNITION #####
 # import the necessary packages
@@ -88,7 +88,7 @@ def bag_depth_callback(image):
 
 ## Callback functions for color frame
 # From camera stream
-def bag_color_callback(image):
+def camera_color_callback(image):
 	color_frame_data = image.data
 # From .bag file
 def bag_color_callback(image):
@@ -123,17 +123,19 @@ def ball_tracker():
         rospy.Subscriber("/device_0/sensor_0/Depth_0/image/data", Image, bag_depth_callback)
         rospy.Subscriber("/device_0/sensor_1/Color_0/image/data", Image, bag_color_callback)
  	# Publish the parsed x,y,radius,distance (uint8[]) array
-    circle_pub = rospy.Publisher('target_distance', UInt8MultiArray, queue_size = 10)
+    circle_pub = rospy.Publisher('target_distance', UInt16MultiArray, queue_size = 10)
     r = rospy.Rate(10)
     time.sleep(1.0)
     frame_num = 0
-
+    flag = 0
     while not rospy.is_shutdown():
-        if (depth_frame_data is not [] or depth_frame_data is not None):
+        if ((depth_frame_data is not [] or depth_frame_data is not None) and frame_num < 10):
             ##### BELOW IS ALL COMMENTED OUT BECAUSE IM NOT SURE HOW TO PARSE THIS NEW "IMAGE" MESSAGE TYPE #####
-            # depth_image = np.asanyarray(depth_frame_data)
-            # color_image = cv2.cvtColor(np.asanyarray(color_frame_data), cv2.COLOR_BGR2RGB)
-
+            depth_image = np.asanyarray(depth_frame_data)
+            color_image = np.asanyarray(color_frame_data)
+            if flag == 0:
+                flag = 1
+                first_frame = depth_frame_data
             # # parsing color image
             # mask = contour_filter(color_image)
             # # gets the x,y,radius reading from image
@@ -156,7 +158,9 @@ def ball_tracker():
             ### Publish Results on ROS Node ###
             circle_pub.publish(data=circle_list)
 
+    np.savetxt("/home/miyesven/Documents/5_first_depth.txt", first_frame)
     r.sleep()
+
     
 if __name__ == '__main__':
 	try:
