@@ -7,6 +7,8 @@
 import rospy
 from std_msgs.msg import Int32, Int32MultiArray, UInt8MultiArray
 from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+
 ##### BALL RECOGNITION #####
 # import the necessary packages
 from collections import deque
@@ -31,7 +33,7 @@ y_list = []
 radius_list = []
 distance_list = []
 timestamp_list = []
-# RGBD data 
+# RGBD data
 depth_frame_data = [] # uint8
 color_frame_data = [] # uint8
 # args = {}
@@ -78,21 +80,24 @@ def parse_color_image(mask, img):
     else:
         return None
 
-## Callback functions for depth frame
-# From camera stream
-def camera_depth_callback(image):
-	depth_frame_data = image.data
-# From .bag file
+## Callback functions for realsense frames using cv_bridge
+# color
+def camera_color_callback(bridge, image):
+	color_frame_data = bridge.imgmsg_to_cv2(image, 'bgr8')
+
+# depth
+def camera_depth_callback(bridge, image):
+	depth_frame_data = image.imgmsg_to_cv2(image, 'z16')
+
+
+## Callback functions for bag frames
+# color
+def bag_color_callback(image):
+	color_frame_data = image.data
+
+# depth
 def bag_depth_callback(image):
 	depth_frame_data = image.data
-
-## Callback functions for color frame
-# From camera stream
-def bag_color_callback(image):
-	color_frame_data = image.data
-# From .bag file
-def bag_color_callback(image):
-	color_frame_data = image.data
 
 ## Main ball_tracking node.
 ##  Opens stream/video and executes the logic to parse each frame
@@ -102,8 +107,8 @@ def ball_tracker():
 	# Subscribe to the following topics:
 	# Video Stream:
 		##<------TODO------>##
-	# 	1. Realsense Camera Node Package > Color Frame Topic 
-	# 	2. Realsense Camera Node Package > Depth Frame Topic 
+	# 	1. Realsense Camera Node Package > Color Frame Topic
+	# 	2. Realsense Camera Node Package > Depth Frame Topic
 	# Playing from .bag file:
 	#	1. rosbag > Depth image Topic
 	#	2. rosbag > Color image Topic
@@ -111,12 +116,16 @@ def ball_tracker():
 	# 	1. Tuple (x in meters, y in meters, depth in meters)
 	# 	2. Time of video frame
 
-    # Init ball_tracker ROS node with annonymous node name 
+    # Init ball_tracker ROS node with annonymous node name
     rospy.init_node('ball_tracker', anonymous= True)
-    rospy.myargv(argv=sys.argv) 
- 	# Subscribe to different topics based on parameters passed in. 
+    rospy.myargv(argv=sys.argv)
+
+    # Init cv_bridge
+    bridge = CvBridge()
+
+ 	# Subscribe to different topics based on parameters passed in.
  	# Default is realsense camera node (input_type = 0)
-    if (sys.argv[0] == 0): 
+    if (sys.argv[0] == 0):
         rospy.Subscriber('/camera/depth/image_raw', Image, camera_color_callback) # THIS IS FROM GLYNN'S CODE AND NOT TESTED
         rospy.Subscriber('/camera/color/image_raw', Image, camera_color_callback)
     else:
@@ -157,10 +166,9 @@ def ball_tracker():
             circle_pub.publish(data=circle_list)
 
     r.sleep()
-    
+
 if __name__ == '__main__':
 	try:
 		ball_tracker()
 	except rospy.ROSInterruptException:
 		pass
-
