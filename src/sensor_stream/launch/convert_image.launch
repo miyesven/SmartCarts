@@ -1,0 +1,8 @@
+<launch>
+	<!-- sensor_stream package launch file -->
+	<node pkg="sensor_stream"
+		  type="convert_image.py"
+		  name="convert_image"
+		  output="screen">
+	</node>
+</launch>
