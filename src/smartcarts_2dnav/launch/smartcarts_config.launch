@@ -1,0 +1,13 @@
+<launch>
+
+<node pkg="sensor_stream" type="realsense_driver_name" name="realsense_pointcloud_pub" output="screen">
+<!--     <param name="sensor_param" value="param_value" /> -->
+</node>
+<node pkg="smartcarts_odom" type="" name="odom_pub" output="screen">
+<!--     <param name="odom_param" value="param_value" />--> 
+</node>
+<node pkg="robot_setup_tf" type="" name="tf_broadcaster" output="screen">
+ 	<!-- <param name="transform_configuration_param" value="param_value" /> -->
+</node>
+
+</launch> 
