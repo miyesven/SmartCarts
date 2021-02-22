@@ -12,32 +12,41 @@
 
 
 double distancePerCount = (3.14159 * 2 * WHEEL_RAD)/ENC_CPR;
-int leftCount_current = 0;
-int rightCount_current = 0;
-int leftCount_last = 0;
-int rightCount_last = 0;
-int deltaLeft;
-int deltaRight;
-double omega_left;
-double omega_right;
-double vLeft;
-double vRight;
+
+double delta_time;
+
+int lCount_current = 0;
+int rCount_current = 0;
+int lCount_last = 0;
+int rCount_last = 0;
+
+double delta_lDist;
+double delta_rDist;
+double delta_cDist;
+double delta_th;
+
+//x,y,th are all zero which implies whenever the robot starts up, it is located at the origin of 
+//the odom coordinate frame (0,0) and the front of the robot is pointed along the positive x-axis
+double x = 0;
+double y = 0;
+double th = 0;
+
 double vx;
 double vy;
 double vth;
 
 
 void process_lCount( const std_msgs::Int16::ConstPtr& lCount){
-  leftCount_current = lCount->data;
+  lCount_current = lCount->data;
 }
 
 void process_rCount( const std_msgs::Int16::ConstPtr& rCount){
-  rightCount_current = rCount->data;
-}deltaLeft = leftCount_current - leftCount_last;
+  rCount_current = rCount->data;
+}
 
 
 int main(int argc, char** argv){
-  ros::init(argc, argv, "odometry_enc_publisher");
+  ros::init(argc, argv, "odom_enc");
 
   ros::NodeHandle n;  //create node variable n
   //create a publisher called "odom_enc_pub" that publishes a message of type "nav_msgs::Odometry" to the topic "odom_enc" 
@@ -61,78 +70,73 @@ int main(int argc, char** argv){
 
   ros::Rate r(5.0); //publish odometry info at 5.0Hz
 
+
   while(n.ok()){
 
     ros::spinOnce();               // check for incoming messages
     current_time = ros::Time::now();
-
+    
 
     //an Odometry message consists of a "pose" message and a "twist" message. Will now get the left and right wheel encoder counts to 
-    //compute x,y,th values for the "pose" message, and vx,vy,vth values for the "twist" message
-    deltaLeft = leftCount_current - leftCount_last;
-    deltaRight = rightCount_current - rightCount_last;
+    //compute x,y,odom_enc_quat values for the "pose" message, and vx,vy,vth values for the "twist" message
+    
+    //***pose is estimated position of robot in odometric frame
+    //***twist is robot's velocity in child frame, normally coordinate frame of mobile base (base_link)
+    delta_time = (current_time - last_time).toSec();
 
-    omega_left = (deltaLeft * distancePerCount) / (current_time - last_time);
-    omega_right = (deltaRight * distancePerCount) / (current_time - last_time);
+    delta_lDist = (lCount_current - lCount_last) * distancePerCount / delta_time; //delta_lDist is the incremental distance moved by the left wheel in metres
+    delta_rDist = (rCount_current - rCount_last) * distancePerCount / delta_time; //delta_rDist is the incremental distance moved by the right wheel in metres
+    delta_cDist = (delta_rDist + delta_lDist) / 2;  //delta_cDist is the incremental distance moved by the robot in metres (center of rotation of the robot, i.e.: base_link)
+    delta_th = (delta_rDist - delta_lDist) / WHEEL_SEP; //delta_th is the incremental angle moved by the robot about its center of rotation (z-axis) in radians
 
-    vLeft = omega_left * WHEEL_RAD;
-    vRight = omega_right * WHEEL_RAD;
+    //compute x,y,odom_enc_quat for the "pose" message
+    x += delta_cDist * cos(delta_th); //add to x the incremental x distance moved by the robot relative to the odom coordinate frame
+    y += delta_cDist * sin(delta_th); //add to y the incremental y distance moved by the robot relative to the odom coordinate frame
+    th += delta_th; //add to th the incremental th angle moved by the robot in the ?base-link? coordinate frame
+    geometry_msgs::Quaternion odom_enc_quat = tf::createQuaternionMsgFromYaw(th); //since all odometry is 6DOF we'll need a quaternion created from yaw
 
-    vx =  (vRight - vLeft) / 2;
-    vy = 0;
-    vth = (vRight - vLeft) / WHEEL_SEP;
+    //compute vx,vy,vth for the "twist" message
+    vx = delta_cDist / delta_time;  //velocity of the robot directly ahead of it; vx always points directly ahead of the robot
+    vy = 0; //vy always zero for a differential drive robot because it can't move directly left or right
+    vth = delta_th / delta_time;  //angular velocity about the z-axis of the robot; z-axis moves with robot
 
 
-    //compute odometry in a typical way given the velocities of the robot
-    double dt = (current_time - last_time).toSec();
-    double delta_x = (vx * cos(th) - vy * sin(th)) * dt;
-    double delta_y = (vx * sin(th) + vy * cos(th)) * dt;
-    double delta_th = vth * dt;
-
-    x += delta_x;
-    y += delta_y;
-    th += delta_th;
-
-    //since all odometry is 6DOF we'll need a quaternion created from yaw
-    geometry_msgs::Quaternion odom_enc_quat = tf::createQuaternionMsgFromYaw(th);
-
-    //first, we'll publish the transform over tf
+    //publish the transform over tf
     geometry_msgs::TransformStamped odom_enc_trans;
     odom_enc_trans.header.stamp = current_time;
     odom_enc_trans.header.frame_id = "odom_enc";
-    odom_enc_trans.child_frame_id = "base_link";
+    odom_enc_trans.child_frame_id = "base_link";  //the base_link frame is the child of the odom frame
 
-    odom_enc_trans.transform.translation.x = x;
-    odom_enc_trans.transform.translation.y = y;
-    odom_enc_trans.transform.translation.z = 0.0;
-    odom_enc_trans.transform.rotation = odom_enc_quat;
+    odom_enc_trans.transform.translation.x = x; //the base_link frame (the robot) is now x metres in the x direction relative to the odom frame
+    odom_enc_trans.transform.translation.y = y; //the base_link frame (the robot) is now y metres in the y direction relative to the odom frame
+    odom_enc_trans.transform.translation.z = 0.0; //the base_link frame (the robot) is now 0 metres in the z direction relative to the odom frame
+    odom_enc_trans.transform.rotation = odom_enc_quat;  //the base_link frame (the robot) is now rotated th radians (expressed in a quaternion)
 
-    //send the transform
-    odom_enc_broadcaster.sendTransform(odom_enc_trans);
+    odom_enc_broadcaster.sendTransform(odom_enc_trans); //send the transform
 
-    //next, we'll publish the odometry message over ROS
+
+    //publish the odometry message over ROS
     nav_msgs::Odometry odom_enc;
     odom_enc.header.stamp = current_time;
     odom_enc.header.frame_id = "odom_enc";
 
-    //set the position
+    //set the pose message (i.e.: the positions)
     odom_enc.pose.pose.position.x = x;
     odom_enc.pose.pose.position.y = y;
     odom_enc.pose.pose.position.z = 0.0;
     odom_enc.pose.pose.orientation = odom_enc_quat;
 
-    //set the velocity
+    //set the twist message (i.e.: the velocities)
     odom_enc.child_frame_id = "base_link";
     odom_enc.twist.twist.linear.x = vx;
     odom_enc.twist.twist.linear.y = vy;
     odom_enc.twist.twist.angular.z = vth;
 
-    //publish the message
-    odom_pub.publish(odom_enc);
+    odom_pub.publish(odom_enc); //publish the odom message on the "odom_enc" topic
 
     last_time = current_time;
-    leftCount_last = leftCount_current;
-    rightCount_last = rightCount_current;
+    lCount_last = lCount_current;
+    rCount_last = rCount_current;
 
     r.sleep();
   }

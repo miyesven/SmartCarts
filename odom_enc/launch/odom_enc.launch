@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="odom_enc" type="odom_enc.cpp" name="odom_enc" output="screen">
+	</node>
+</launch>
