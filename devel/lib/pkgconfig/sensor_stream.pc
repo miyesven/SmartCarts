@@ -1,0 +1,8 @@
+prefix=/home/miyesven/Documents/workspace/SmartCarts/devel
+
+Name: sensor_stream
+Description: Description of sensor_stream
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
