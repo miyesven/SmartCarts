@@ -11,11 +11,14 @@ rostopic echo -b 5.bag /device_0/sensor_0/Depth_0/image/data
 rosbag play -l filename.bag 
 //-l means on loop, no -l means play once then end. this activates a ROS node with a random node name
 
-roslaunch target_tracking_pkg ball_tracking.launch input_type:=1
-// input_type:=0 means subscribing to camera. :=1 means subscribing to stream from a .bag file
-
 rosbag info filename.bag
 // list all topics published by the rosbag file
+
+ros_readbagfile ~/Documents/workspace/SmartCarts/src/target_tng_pkg/src/5.bag /device_0/sensor_0/Depth_0/image/data
+// using ros_readbagfile command to read bag file
+
+roslaunch target_tracking_pkg ball_tracking.launch input_type:=1
+// input_type:=0 means subscribing to camera. :=1 means subscribing to stream from a .bag file
 
 topics interested from bag file:
 - /device_0/sensor_0/Depth_0/image/data (sensor_msgs/Image)
@@ -31,9 +34,6 @@ rostopic pub /topic_name std_msgs/String hello
 
 /opt/ros/melodic/share
 // where ros data/packages are
-
-ros_readbagfile ~/Documents/workspace/SmartCarts/src/target_tng_pkg/src/5.bag /device_0/sensor_0/Depth_0/image/data
-// using ros_readbagfile command to read bag file
 
 python
  python2
