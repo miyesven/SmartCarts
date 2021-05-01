@@ -1,0 +1,18 @@
+<launch>
+  <arg name="robot_name"/>
+  <arg name="init_pose"/>
+  <arg name="model" default="$(find ducklings)/urdf/robot_leader.xacro"/>
+
+  <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
+
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="$(arg init_pose) -unpause -urdf -model $(arg robot_name) -param robot_description" respawn="false" output="screen" />
+
+  <node name="tf2_broadcaster" pkg="ducklings" type="robot_tf2_broadcaster.py" respawn="false" output="screen"/>
+
+  <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"
+        respawn="false"/>
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  -->
+</launch>
