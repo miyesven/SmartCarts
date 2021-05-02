@@ -1,8 +1,24 @@
-<!--LAUNCH FILE FOR BOTH LEADER AND FOLLOWER LINE FOLLOWING-->
-<!-- THIS LAUNCH FILE CONTAINS THE ORIGINAL WAYPOINT FOLLOWING NODE WITH DEPTH_CAMERA_BALL_TRACKING.PY -->
+<!--
+This launch file written by both Svena and Simon, contains launch instructions for both leader and follower robot
+This is intended as the MAIN launch file. Run as 'roslaunch smartcarts my_launch.launch'
+
+Robot Follower has the following functions:
+- Target Tracking (target_pose_tracking.py) & Tf Broadcasting (target_pose_broadcaster.py)
+- Data Logger (ball_waypoint_listener.py)
+- Motion Controller (follower_controller.py)
+- Visualization (trajectory - hector_trajectory_server, tf frames - robot_pose_ekf)
+
+Robot Leader has the following functions:
+- Motion Controller (leader_controller.py)
+- Visualization (trajectory - hector_trajectory_server)
+
+Global Nodes:
+- Waypoints (waypoint_memory.py)
+- Simulation Visualization (rviz)
+-->
 
 <launch>
-  <arg name="waypoints_file" value="$(find smartcarts)/node/preset_poses/sine_L4A1.csv"/>
+  <arg name="waypoints_file" value="$(find smartcarts)/node/preset_poses/sine_L4A1.csv"/> <!-- load in preset poses for leader -->
   <param name="/camera_type" value="depth"/>
   <param name="/ball_radius" value="0.04" />
   <param name="/debug_mode" value="0"/>
@@ -69,6 +85,6 @@
 
   <node pkg="smartcarts" type="waypoint_memory.py" name="waypoint_memory" output="screen"/>
 
-<node pkg="rviz" type="rviz" name="rviz" args="-d $(find smartcarts)/rviz/follower_pathview.rviz" />
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find smartcarts)/rviz/follower_pathview.rviz" />
 
 </launch>

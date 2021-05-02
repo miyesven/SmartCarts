@@ -1,3 +1,21 @@
+<!--
+This launch file written by both Svena and Simon, contains launch instructions for both leader and follower robot
+This is intended as a testing bed for the my_launch.launch files. The current version has the following components and functions:
+
+Robot Follower has the following functions:
+- Target Tracking (target_pose_tracking.py) & Tf Broadcasting (target_pose_broadcaster.py)
+- Motion Controller (follower_controller.py)
+- Visualization (trajectory - hector_trajectory_server, tf frames - robot_pose_ekf)
+
+Robot Leader has the following functions:
+- Motion Controller (leader_controller.py)
+- Visualization (trajectory - hector_trajectory_server)
+
+Global Nodes:
+- Waypoints (waypoint_memory.py)
+- Simulation Visualization (rviz)
+-->
+
 <launch>
 
   <arg name="waypoints_file" value="$(find smartcarts)/node/poses.csv"/>

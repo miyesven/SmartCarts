@@ -62,7 +62,6 @@ class BallTracker:
         self.camera_width = None
 
         # Initialize Publishers and Subscribers
-        ## EDIT THIS FOR PHYSICAL BALL TRACKING
         self.camera_info_sub = rospy.Subscriber('/{}/camera1/color/camera_info'.format(self.robot_name), \
                                         CameraInfo, self.camera_info_callback, queue_size = 1)
         self.leader_help_sub = rospy.Subscriber('/{}/leader_help'.format(self.robot_name), Int32, self.leader_help_callback)
@@ -74,12 +73,10 @@ class BallTracker:
         self.ats = ApproximateTimeSynchronizer([self.color_sub, self.depth_sub, self.states_sub], \
                                                 queue_size=10, slop=0.1, allow_headerless=True)
         self.ats.registerCallback(self.target_pose_calc_callback)
-        # Publish ball pose as calculated
-
+        # Publish ball pose as calculated 
         self.target_pose_pub = rospy.Publisher("/target_pose", PoseStamped, queue_size = 1)
         self.ball_radius_pub = rospy.Publisher("/ball_radius", Float32, queue_size = 1) # for waypoint_listener
         self.ball_distance_pub = rospy.Publisher('/ball_distance', Float32, queue_size = 1)
-        # self.masked_ball_img = rospy.Publisher("/follower/circ_detection_image", Image, queue_size=1)
 
         # Initialize Class Variables
         self.depth_image_raw = None
@@ -114,7 +111,7 @@ class BallTracker:
     Returns [circle_list] a list for information about enclosing circle (x,y,radius)
     '''
     def parse_color_image(self, mask, img):
-        ## Finding Contours
+        # Finding Contours
         image_, contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         # Find max contour area
         i = 0
@@ -201,39 +198,20 @@ class BallTracker:
             y = self.circle_list[1]
             radius = self.circle_list[2]
             position_data = [x,y]
-            # color_image = cv2.circle(color_image, (x,y), int(radius), (0, 255, 255), 2)
-            # # self.masked_ball_img.publish(self.bridge.cv2_to_imgmsg(color_image, "bgr8"))
-            # depth_image = cv2.circle(self.depth_image_raw, (x,y), 5, (0, 255, 255), 2)
             distance = self.depth_image_raw[int(y)][int(x)] # ROWS ARE Y and COLS ARE X
-            #print("distance = {}".format(distance))
             self.ball_radius_pub.publish(radius)
             if distance < 0.01 or distance > 10 or np.isnan(distance):
                 self.target_pose_pub.publish(self.no_ball_poseStamped())
                 self.ball_distance_pub.publish(-1.0)
             else:
                 self.ball_distance_pub.publish(distance)
-                # if twist.angular.z != 0 and self.leader_help_state == 0:
-                #     self.target_pose_pub.publish(self.no_ball_poseStamped())
-                # else:
                 target_pose = self.calc_leader_pose([x,y], distance, radius)
                 if self.twist.angular.z > 0:
                     self.target_pose_pub.publish(self.no_ball_poseStamped())
                 else:
-                    # METHOD 1: Manually finding transform
-                    # q = robot_pose.orientation
-                    # RotMat = self.Quat2Mat(q)
-                    # v = np.matmul(RotMat, [target_pose.position.x, target_pose.position.y, target_pose.position.z])
-                    # target_abs_point = self.addTwoPoints(robot_pose.position, Point(x=v[0], y=v[1], z=v[2]))
-                    # self.target_pose_pub.publish(PoseStamped(header = Header(stamp = robot_timestamp, frame_id = "world"), \
-                    #                                         pose = Pose(position = target_abs_point, orientation=Quaternion(w = 1))))
-                    # METHOD 2: Broadcasting the target pose in follower frame
                     self.target_pose_pub.publish(PoseStamped(header = Header(stamp = rospy.Time.now(), frame_id = "follower"), \
                                                             pose = target_pose))
             time_stop = rospy.Time.now()
-            # print("Parsing ball image took {} ns".format(time_stop.nsecs - time_start.nsecs))
-        # cv2.imshow("Depth", self.depth_image_raw)
-        # cv2.imshow("RGB", color_image)
-        # cv2.waitKey(3)
         return
 
 def main(args):

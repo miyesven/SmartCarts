@@ -57,8 +57,6 @@ class waypoint_queue:
 	def states_sub_callback(self, states):
 		if (len(states.name) != 3):
 			return
-		# if self.follower_start.header.stamp.nsecs == 0:
-		# 	self.follower_start = PoseStamped(header = Header(stamp=rospy.Time.now()), pose = msg.pose[msg.name.index("follower")])
 		parent_idx = states.name.index(self.parent_name)
 		self.parent_pose = PoseStamped(header = Header(), pose = states.pose[parent_idx])
 
@@ -118,7 +116,6 @@ class waypoint_queue:
 				i += 1
 		if len(self.waypoints) > 1:
 			tail = self.str_xyz(self.waypoints[-1].pose)
-		# print("waypoint head = {}, waypoint tail = {}".format(head, tail))
 		return
 
 	def main(self):
@@ -129,7 +126,7 @@ class waypoint_queue:
 			try:
 				# If integrated odom, this "world" frame will not be gazebo world. Will be the relative starting pt of follower
 				# target_abs_tf = tfBuffer.lookup_transform('follower_start', 'target', rospy.Time.now())
-				target_abs_tf = tfBuffer.lookup_transform('odom', 'target', rospy.Time()) #TODO: fix the time issue
+				target_abs_tf = tfBuffer.lookup_transform('odom', 'target', rospy.Time()) 
 			except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
 				rate.sleep()
 				continue
@@ -141,7 +138,7 @@ class waypoint_queue:
 				self.target_waypoint_pub.publish(self.current_waypoint)
 			else:
 				self.target_waypoint_pub.publish(self.current_waypoint) 
-			# Get rid of waypoints that have been reached and keep track of current ones, not sure if this is needed
+			# Get rid of waypoints that have been reached and keep track of current ones
 			if not check_invalid_PoseStamped(self.current_waypoint):
 				if (self.calc_3d_euler_distance(self.current_waypoint.pose, self.parent_pose.pose) < self.following_deadband):
 					self.waypoints.popleft () # POPLEFT
