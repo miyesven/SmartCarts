@@ -37,7 +37,7 @@ def handle_robot_pose(msg, robot_name):
     t.transform.rotation.z = q.z
     t.transform.rotation.w = q.w
 
-    br.sendTransform(t)s
+    br.sendTransform(t)
 
 # Finds pose corresponding to robot_name from ModelStates
 def extract_pose_callback(msg):

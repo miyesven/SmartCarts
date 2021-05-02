@@ -46,26 +46,26 @@ class TargetBroadcaster:
 		self.calc_pub = rospy.Publisher('/calc_debug', String, queue_size=10)
 		print("starting Target Broadcasting")
 
-	'''Callback function for /target_pose Subscriber. Broadcasts the Pose passed into the function '''
+	'''Callback function for /target_pose Subscriber. Broadcasts the Pose passed into the function'''
 	def handle_target_broadcast(self, target_pose, parent_frame):
-	    br = tf2_ros.TransformBroadcaster()
-	    t = geometry_msgs.msg.TransformStamped()
-	    t.header.stamp = rospy.Time.now()
-	    t.header.frame_id = parent_frame
-	    t.child_frame_id = "target"
-	    pt = target_pose.pose.position
-	    q = target_pose.pose.orientation
-	    t.transform.translation.x = pt.x
-	    t.transform.translation.y = pt.y
-	    t.transform.translation.z = pt.z
-	    t.transform.rotation.x = q.x
-	    t.transform.rotation.y = q.y
-	    t.transform.rotation.z = q.z
-	    t.transform.rotation.w = q.w
-	    br.sendTransform(t)
+		br = tf2_ros.TransformBroadcaster()
+		t = geometry_msgs.msg.TransformStamped()
+		t.header.stamp = rospy.Time.now()
+		t.header.frame_id = parent_frame
+		t.child_frame_id = "target"
+		pt = target_pose.pose.position
+		q = target_pose.pose.orientation
+		t.transform.translation.x = pt.x
+		t.transform.translation.y = pt.y
+		t.transform.translation.z = pt.z
+		t.transform.rotation.x = q.x
+		t.transform.rotation.y = q.y
+		t.transform.rotation.z = q.z
+		t.transform.rotation.w = q.w
+		br.sendTransform(t)
 
-    '''Broadcast Target Pose on TF Buffer '''
-   	def target_pose_broadcast_callback(self, target_pose):
+	'''Broadcast Target Pose on TF Buffer'''
+	def target_pose_broadcast_callback(self, target_pose):
 		if target_pose.pose.position.x == -1:
 			self.handle_target_broadcast(PoseStamped(header = Header(), \
 													pose = Pose(position = Point(), orientation = Quaternion(w=1))), 'odom')
@@ -81,8 +81,8 @@ def main(args):
 	try:
 		rospy.spin()
 	except KeyboardInterrupt:
-	    print("target_pose_broadcaster shutting down")
+		print("target_pose_broadcaster shutting down")
 	cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    main(sys.argv)
+	main(sys.argv)
